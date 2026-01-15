@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>SystemTag</title>
+  <script src="shared/js/qr-handler.js"></script>
+</head>
+<body>
+<script>
+  // Si viene con ?u=xxx entra a Unlkd, si no, Core
+  const params = new URLSearchParams(window.location.search);
+  const user = params.get("u");
+
+  if (user) {
+    window.location.href = `unlkd/users/${user}/index.html`;
+  } else {
+    window.location.href = `core/index.html`;
+  }
+</script>
+</body>
+</html>
