@@ -5,162 +5,172 @@
 <title>System Fail</title>
 
 <style>
-body {
-    margin: 0;
-    background: black;
-    color: #00ff99;
+body{
+    margin:0;
+    background:black;
+    overflow:hidden;
     font-family: monospace;
-    overflow: hidden;
+    color:#0f0;
 }
 
-#systemFailBtn {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 16px;
-    height: 16px;
-    background: red;
-    border-radius: 50%;
-    border: none;
-    box-shadow: 0 0 12px red;
-    cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.3s ease;
+/* Fragmentos de código */
+.code-fragment{
+    position:absolute;
+    font-size:14px;
+    opacity:0.15;
+    user-select:none;
+    pointer-events:none;
+    animation: flicker 4s infinite;
 }
 
-#systemFailBtn.pressing {
-    transform: translate(-50%, -50%) scale(1.6);
-    box-shadow: 0 0 30px red;
+@keyframes flicker{
+    0%{opacity:0.1;}
+    50%{opacity:0.25;}
+    100%{opacity:0.1;}
 }
 
-#kernelOverlay {
-    position: fixed;
-    inset: 0;
-    background: black;
-    display: none;
-    padding: 40px;
-    box-sizing: border-box;
+/* Punto rojo */
+#signal{
+    position:fixed;
+    top:15px;
+    left:15px;
+    width:18px;
+    height:18px;
+    background:red;
+    border-radius:50%;
+    box-shadow:0 0 10px red;
+    cursor:pointer;
+    animation: blink 2s infinite;
 }
 
-#kernelConsole {
-    white-space: pre-wrap;
-    font-size: 14px;
-    line-height: 1.5;
+@keyframes blink{
+    0%,100%{opacity:1;}
+    50%{opacity:0.3;}
 }
 
-.glitch {
-    animation: glitchAnim 0.2s infinite;
+/* Movimiento leve */
+.move{
+    animation: drift 6s infinite alternate;
 }
 
-@keyframes glitchAnim {
-    0% { filter: contrast(1) hue-rotate(0deg); }
-    50% { filter: contrast(4) hue-rotate(180deg); }
-    100% { filter: contrast(1) hue-rotate(0deg); }
+@keyframes drift{
+    0%{transform:translate(0,0);}
+    50%{transform:translate(3px,-2px);}
+    100%{transform:translate(-2px,2px);}
+}
+
+/* Pantalla de falla */
+#failScreen{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:black;
+    color:red;
+    display:none;
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
+    font-size:2rem;
+    text-align:center;
+    animation: glitch 0.3s infinite;
+}
+
+@keyframes glitch{
+    0%{transform:translate(0);}
+    20%{transform:translate(-3px,3px);}
+    40%{transform:translate(3px,-3px);}
+    60%{transform:translate(-2px,2px);}
+    80%{transform:translate(2px,-2px);}
+    100%{transform:translate(0);}
 }
 </style>
 </head>
 
 <body>
 
-<button id="systemFailBtn"></button>
+<div id="signal" class="move"></div>
 
-<div id="kernelOverlay">
-    <div id="kernelConsole"></div>
+<div id="failScreen">
+    <div>SYSTEM FAILURE</div>
+    <div style="font-size:1rem;color:white;margin-top:20px;">
+        Touch to continue...
+    </div>
 </div>
 
 <script>
 
-const btn = document.getElementById("systemFailBtn");
-const overlay = document.getElementById("kernelOverlay");
-const consoleDiv = document.getElementById("kernelConsole");
+// -------- FRAGMENTOS DE CÓDIGO DECORATIVOS --------
 
-let holdTimeout;
-let readyForTouch = false;
+const fragments = [
+"0x004F3A",
+"kernel.panic()",
+"ERR_NULL_VOID",
+"system.override(false)",
+"segmentation_fault",
+"void main(){}",
+"exec >> corrupted",
+"fatal_exception",
+"inject.signal()",
+"// memory leak",
+"if(system==alive)",
+"decrypt.fail"
+];
 
-/* HOLD 3 SEGUNDOS */
-function startHold() {
-    btn.classList.add("pressing");
-
-    holdTimeout = setTimeout(() => {
-        activateSequence();
-    }, 3000);
+for(let i=0;i<40;i++){
+    const span = document.createElement("div");
+    span.className="code-fragment";
+    span.innerText = fragments[Math.floor(Math.random()*fragments.length)];
+    span.style.top = Math.random()*100+"vh";
+    span.style.left = Math.random()*100+"vw";
+    span.style.fontSize = (10 + Math.random()*20)+"px";
+    document.body.appendChild(span);
 }
 
-function cancelHold() {
-    btn.classList.remove("pressing");
-    clearTimeout(holdTimeout);
+// --------- PUNTO ROJO HOLD ---------
+
+let signal = document.getElementById("signal");
+let holdTimer;
+let holdTime = 1500;
+
+signal.addEventListener("mousedown", startHold);
+signal.addEventListener("touchstart", startHold);
+
+signal.addEventListener("mouseup", cancelHold);
+signal.addEventListener("mouseleave", cancelHold);
+signal.addEventListener("touchend", cancelHold);
+
+function startHold(){
+    holdTimer = setTimeout(triggerFail, holdTime);
 }
 
-btn.addEventListener("mousedown", startHold);
-btn.addEventListener("mouseup", cancelHold);
-btn.addEventListener("mouseleave", cancelHold);
-btn.addEventListener("touchstart", startHold);
-btn.addEventListener("touchend", cancelHold);
-
-/* SECUENCIA */
-async function activateSequence() {
-
-    document.body.classList.add("glitch");
-
-    setTimeout(() => {
-        document.body.classList.remove("glitch");
-        runKernel();
-    }, 2000);
+function cancelHold(){
+    clearTimeout(holdTimer);
 }
 
-function wait(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+// -------- SECUENCIA DE FALLA --------
+
+function triggerFail(){
+
+    document.querySelectorAll(".code-fragment").forEach(e=>e.remove());
+    signal.remove();
+
+    let fail = document.getElementById("failScreen");
+    fail.style.display="flex";
+
+    let audio = new Audio();
+    audio.src="https://assets.mixkit.co/sfx/preview/mixkit-glitch-distortion-2898.mp3";
+    audio.play();
+
+    document.body.style.background="black";
+    document.body.style.color="red";
 }
 
-async function runKernel() {
+// -------- ESPERA TOQUE FINAL --------
 
-    overlay.style.display = "block";
-    consoleDiv.innerHTML = "";
-
-    const lines = [
-        "[CRITICAL] System collapse detected...",
-        "[WARN] Integrity failure...",
-        "[FAIL] Kernel response timeout...",
-        "[MODE] Divergence active..."
-    ];
-
-    for (let line of lines) {
-        await typeLine(line);
-    }
-
-    await wait(2000);
-
-    consoleDiv.innerHTML += "\n\n...";
-
-    await wait(5000);
-
-    consoleDiv.innerHTML += "\n\nTAP TO PROCEED";
-    readyForTouch = true;
-}
-
-function typeLine(text, speed = 25) {
-    return new Promise(resolve => {
-        let i = 0;
-        const interval = setInterval(() => {
-            consoleDiv.innerHTML += text.charAt(i);
-            i++;
-            if (i >= text.length) {
-                clearInterval(interval);
-                consoleDiv.innerHTML += "\n";
-                resolve();
-            }
-        }, speed);
-    });
-}
-
-/* ESPERAR TOQUE */
-document.addEventListener("click", () => {
-    if (readyForTouch) {
-        document.body.style.background = "black";
-        setTimeout(() => {
-            window.location.href = "grotesca.html";
-        }, 500);
-    }
+document.getElementById("failScreen").addEventListener("click",()=>{
+    window.location.href="https://tupaginagrotesca.com";
 });
 
 </script>
