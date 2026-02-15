@@ -1,21 +1,169 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>SystemTag</title>
-  <script src="shared/js/qr-handler.js"></script>
-</head>
-<body>
-<script>
-  // Si viene con ?u=xxx entra a Unlkd, si no, Core
-  const params = new URLSearchParams(window.location.search);
-  const user = params.get("u");
+<meta charset="UTF-8">
+<title>System Fail</title>
 
-  if (user) {
-    window.location.href = `unlkd/users/${user}/index.html`;
-  } else {
-    window.location.href = `core/index.html`;
-  }
+<style>
+body {
+    margin: 0;
+    background: black;
+    color: #00ff99;
+    font-family: monospace;
+    overflow: hidden;
+}
+
+#systemFailBtn {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 16px;
+    height: 16px;
+    background: red;
+    border-radius: 50%;
+    border: none;
+    box-shadow: 0 0 12px red;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.3s ease;
+}
+
+#systemFailBtn.pressing {
+    transform: translate(-50%, -50%) scale(1.6);
+    box-shadow: 0 0 30px red;
+}
+
+#kernelOverlay {
+    position: fixed;
+    inset: 0;
+    background: black;
+    display: none;
+    padding: 40px;
+    box-sizing: border-box;
+}
+
+#kernelConsole {
+    white-space: pre-wrap;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.glitch {
+    animation: glitchAnim 0.2s infinite;
+}
+
+@keyframes glitchAnim {
+    0% { filter: contrast(1) hue-rotate(0deg); }
+    50% { filter: contrast(4) hue-rotate(180deg); }
+    100% { filter: contrast(1) hue-rotate(0deg); }
+}
+</style>
+</head>
+
+<body>
+
+<button id="systemFailBtn"></button>
+
+<div id="kernelOverlay">
+    <div id="kernelConsole"></div>
+</div>
+
+<script>
+
+const btn = document.getElementById("systemFailBtn");
+const overlay = document.getElementById("kernelOverlay");
+const consoleDiv = document.getElementById("kernelConsole");
+
+let holdTimeout;
+let readyForTouch = false;
+
+/* HOLD 3 SEGUNDOS */
+function startHold() {
+    btn.classList.add("pressing");
+
+    holdTimeout = setTimeout(() => {
+        activateSequence();
+    }, 3000);
+}
+
+function cancelHold() {
+    btn.classList.remove("pressing");
+    clearTimeout(holdTimeout);
+}
+
+btn.addEventListener("mousedown", startHold);
+btn.addEventListener("mouseup", cancelHold);
+btn.addEventListener("mouseleave", cancelHold);
+btn.addEventListener("touchstart", startHold);
+btn.addEventListener("touchend", cancelHold);
+
+/* SECUENCIA */
+async function activateSequence() {
+
+    document.body.classList.add("glitch");
+
+    setTimeout(() => {
+        document.body.classList.remove("glitch");
+        runKernel();
+    }, 2000);
+}
+
+function wait(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function runKernel() {
+
+    overlay.style.display = "block";
+    consoleDiv.innerHTML = "";
+
+    const lines = [
+        "[CRITICAL] System collapse detected...",
+        "[WARN] Integrity failure...",
+        "[FAIL] Kernel response timeout...",
+        "[MODE] Divergence active..."
+    ];
+
+    for (let line of lines) {
+        await typeLine(line);
+    }
+
+    await wait(2000);
+
+    consoleDiv.innerHTML += "\n\n...";
+
+    await wait(5000);
+
+    consoleDiv.innerHTML += "\n\nTAP TO PROCEED";
+    readyForTouch = true;
+}
+
+function typeLine(text, speed = 25) {
+    return new Promise(resolve => {
+        let i = 0;
+        const interval = setInterval(() => {
+            consoleDiv.innerHTML += text.charAt(i);
+            i++;
+            if (i >= text.length) {
+                clearInterval(interval);
+                consoleDiv.innerHTML += "\n";
+                resolve();
+            }
+        }, speed);
+    });
+}
+
+/* ESPERAR TOQUE */
+document.addEventListener("click", () => {
+    if (readyForTouch) {
+        document.body.style.background = "black";
+        setTimeout(() => {
+            window.location.href = "grotesca.html";
+        }, 500);
+    }
+});
+
 </script>
+
 </body>
 </html>
